@@ -30,7 +30,7 @@ jobs:
           persist-credentials: false
 
       - name: Install agent skills
-        run: cp -r .agents/skills ~/.claude/skills
+        run: mkdir -p ~/.claude && cp -r .agents/skills ~/.claude/skills
 
       - uses: anthropics/claude-code-action@v1
         with:
