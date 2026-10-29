@@ -1,21 +1,17 @@
 {
   "name": "calendar-booking",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev:frontend": "npm run dev --prefix frontend",
     "dev:backend": "npm start --prefix backend",
-
     "install:all": "npm install --prefix frontend && npm install --prefix backend && npm install --prefix contract",
-
     "lint": "npm run lint --prefix frontend && npm run lint --prefix backend",
     "typecheck": "npm run typecheck --prefix frontend && npm run typecheck --prefix backend",
     "test:unit": "npm test --prefix frontend && npm test --prefix backend",
     "test:e2e": "npm run test:e2e --prefix frontend",
     "check": "npm run lint && npm run typecheck && npm run test:unit && npm run test:e2e",
-
     "test": "npm run test:unit",
-
     "generate:openapi": "npm run generate --prefix contract && cp contract/tsp-output/@typespec/openapi3/openapi.yaml openapi.yaml",
     "generate:client": "npm run generate:client --prefix frontend",
     "generate": "npm run generate:openapi && npm run generate:client"
