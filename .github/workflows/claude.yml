@@ -63,10 +63,16 @@ jobs:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           use_sticky_comment: true
-          show_full_output: true
+          settings: |
+            {"permissions":{"allow":["Bash(gh issue view:*)", "Bash(gh issue comment:*)", "Bash(gh issue edit:*)", "Bash(gh label list:*)", "Bash(gh issue list:*)"]}}
           prompt: |
             Новое обращение: issue #${{ github.event.issue.number }}.
-            Прочитай его описание и все комментарии.
+
+            Заголовок: ${{ github.event.issue.title }}
+
+            Описание:
+            ${{ github.event.issue.body }}
+
             Выполни скилл triage: разбери обращение, проверь кодовую базу,
             предложи категорию (bug/enhancement) и следующий шаг,
             оставь уточняющие вопросы если данных не хватает.
