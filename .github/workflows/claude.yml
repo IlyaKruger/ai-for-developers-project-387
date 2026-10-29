@@ -5,9 +5,12 @@ on:
     types: [created]
   pull_request_review_comment:
     types: [created]
+  issues:
+    types: [opened]
 
 jobs:
   claude:
+    if: github.event_name == 'issue_comment' || github.event_name == 'pull_request_review_comment'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     concurrency:
@@ -29,3 +32,36 @@ jobs:
       - uses: anthropics/claude-code-action@v1
         with:
           trigger_phrase: /claude
+
+  auto-triage:
+    if: |
+      github.event_name == 'issues' &&
+      github.event.action == 'opened' &&
+      !contains(github.event.issue.labels.*.name, 'ready-for-agent') &&
+      contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.issue.author_association)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    concurrency:
+      group: auto-triage-${{ github.event.issue.number }}
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      id-token: write
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Install agent skills
+        run: mkdir -p ~/.claude && cp -r .agents/skills ~/.claude/skills
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          direct_prompt: |
+            Новое обращение: issue #${{ github.event.issue.number }}.
+            Прочитай его описание и все комментарии.
+            Выполни скилл triage: разбери обращение, проверь кодовую базу,
+            предложи категорию (bug/enhancement) и следующий шаг,
+            оставь уточняющие вопросы если данных не хватает.
+            Код не меняй.
