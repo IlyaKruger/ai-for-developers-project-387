@@ -192,9 +192,7 @@ backend/src/
 ### Настройка (один раз)
 
 1. Установите **Claude GitHub App** на репозиторий.
-2. Добавьте ключ модели: **Settings → Secrets and variables → Actions → New repository secret**
-   с именем `ANTHROPIC_API_KEY`.
-3. Убедитесь, что воркфлоу слит в `main`.
+2. Убедитесь, что воркфлоу слит в `main`.
 
 ---
 

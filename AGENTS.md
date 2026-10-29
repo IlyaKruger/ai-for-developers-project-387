@@ -96,4 +96,4 @@ Single-context layout (`GLOSSARY.md` + `docs/adr/` at repo root). See `docs/agen
 Воркфлоу `.github/workflows/claude.yml`. Команда триггера: `/claude`.
 Доступен владельцам, участникам и коллабораторам репозитория.
 Скиллы устанавливаются из `.agents/skills/` при каждом прогоне.
-Требуется: Claude GitHub App + секрет `ANTHROPIC_API_KEY` в Settings → Secrets.
+Требуется: Claude GitHub App, установленный на репозиторий.
