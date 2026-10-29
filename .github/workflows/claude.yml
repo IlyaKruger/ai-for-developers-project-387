@@ -62,6 +62,7 @@ jobs:
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          use_sticky_comment: true
           prompt: |
             Новое обращение: issue #${{ github.event.issue.number }}.
             Прочитай его описание и все комментарии.
