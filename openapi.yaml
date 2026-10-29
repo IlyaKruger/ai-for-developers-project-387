@@ -1,0 +1,262 @@
+openapi: 3.0.0
+info:
+  title: Calendar Booking API
+  version: 0.0.0
+tags: []
+paths:
+  /bookings:
+    get:
+      operationId: Bookings_list
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Booking'
+    post:
+      operationId: Bookings_create
+      parameters: []
+      responses:
+        '201':
+          description: The request has succeeded and a new resource has been created as a result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConflictError'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBookingRequest'
+  /bookings/{id}:
+    delete:
+      operationId: Bookings_cancel
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: 'There is no content to send for this request, but the headers may be useful. '
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+  /event-types:
+    get:
+      operationId: EventTypes_list
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EventType'
+    post:
+      operationId: EventTypes_create
+      parameters: []
+      responses:
+        '201':
+          description: The request has succeeded and a new resource has been created as a result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventType'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEventTypeRequest'
+  /slots:
+    get:
+      operationId: Slots_list
+      parameters:
+        - name: eventTypeId
+          in: query
+          required: true
+          schema:
+            type: string
+          explode: false
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Slot'
+components:
+  schemas:
+    Booking:
+      type: object
+      required:
+        - id
+        - slotId
+        - eventTypeId
+        - startTime
+        - durationMinutes
+        - bookerName
+        - bookerEmail
+      properties:
+        id:
+          type: string
+        slotId:
+          type: string
+        eventTypeId:
+          type: string
+        startTime:
+          type: string
+          format: date-time
+        durationMinutes:
+          type: integer
+          format: int32
+        bookerName:
+          type: string
+        bookerEmail:
+          type: string
+    ConflictError:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          enum:
+            - SLOT_UNAVAILABLE
+        message:
+          type: string
+    CreateBookingRequest:
+      type: object
+      required:
+        - slotId
+        - bookerName
+        - bookerEmail
+      properties:
+        slotId:
+          type: string
+        bookerName:
+          type: string
+        bookerEmail:
+          type: string
+    CreateEventTypeRequest:
+      type: object
+      required:
+        - title
+        - description
+        - durationMinutes
+        - schedule
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        durationMinutes:
+          type: integer
+          format: int32
+        schedule:
+          $ref: '#/components/schemas/WeeklySchedule'
+    EventType:
+      type: object
+      required:
+        - id
+        - title
+        - description
+        - durationMinutes
+        - schedule
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        durationMinutes:
+          type: integer
+          format: int32
+        schedule:
+          $ref: '#/components/schemas/WeeklySchedule'
+    NotFoundError:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          enum:
+            - NOT_FOUND
+        message:
+          type: string
+    Slot:
+      type: object
+      required:
+        - id
+        - eventTypeId
+        - startTime
+      properties:
+        id:
+          type: string
+        eventTypeId:
+          type: string
+        startTime:
+          type: string
+          format: date-time
+    WeeklySchedule:
+      type: object
+      properties:
+        mon:
+          type: array
+          items:
+            type: integer
+            format: int32
+        tue:
+          type: array
+          items:
+            type: integer
+            format: int32
+        wed:
+          type: array
+          items:
+            type: integer
+            format: int32
+        thu:
+          type: array
+          items:
+            type: integer
+            format: int32
+        fri:
+          type: array
+          items:
+            type: integer
+            format: int32
+        sat:
+          type: array
+          items:
+            type: integer
+            format: int32
+        sun:
+          type: array
+          items:
+            type: integer
+            format: int32
