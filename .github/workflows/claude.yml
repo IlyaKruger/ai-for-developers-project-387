@@ -32,6 +32,7 @@ jobs:
       - uses: anthropics/claude-code-action@v1
         with:
           trigger_phrase: /claude
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
 
   auto-triage:
     if: |
@@ -58,6 +59,7 @@ jobs:
 
       - uses: anthropics/claude-code-action@v1
         with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           direct_prompt: |
             Новое обращение: issue #${{ github.event.issue.number }}.
             Прочитай его описание и все комментарии.
