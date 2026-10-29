@@ -169,7 +169,7 @@ backend/src/
 
 ```
 /claude запусти скилл to-spec по обсуждению этого issue
-/cc реализуй задачу из issue #12
+/claude реализуй задачу из issue #12
 ```
 
 Ответ появится комментарием от имени приложения. Прогресс — во вкладке **Actions**.
@@ -179,7 +179,7 @@ backend/src/
 | Параметр | Значение |
 |---|---|
 | Событие | `issue_comment`, `pull_request_review_comment` |
-| Команды | `/claude`, `/cc` |
+| Команды | `/claude` |
 | Доступ | Owner, Member, Collaborator |
 | Модель | `claude-sonnet-4-6` (Anthropic) |
 | Сессии | Не публикуются (`share: false`) |

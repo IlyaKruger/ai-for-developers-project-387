@@ -8,12 +8,6 @@ on:
 
 jobs:
   claude:
-    if: |
-      github.event.sender.type != 'Bot' &&
-      (startsWith(github.event.comment.body, '/claude') ||
-       startsWith(github.event.comment.body, '/cc')) &&
-      contains(fromJson('["OWNER","MEMBER","COLLABORATOR"]'),
-               github.event.comment.author_association)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     concurrency:
@@ -34,6 +28,4 @@ jobs:
 
       - uses: anthropics/claude-code-action@v1
         with:
-          model: claude-sonnet-4-6
           trigger_phrase: /claude
-          share: false
