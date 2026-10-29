@@ -158,6 +158,44 @@ backend/src/
   overlap.ts     — функция проверки пересечения временных окон
 ```
 
+## Агент в GitHub Actions
+
+Воркфлоу `.github/workflows/claude.yml` запускает Claude Code внутри GitHub Actions
+в ответ на команды в комментариях к issue и pull request.
+
+### Как использовать
+
+Напишите команду в комментарии к любому issue или PR:
+
+```
+/claude запусти скилл to-spec по обсуждению этого issue
+/cc реализуй задачу из issue #12
+```
+
+Ответ появится комментарием от имени приложения. Прогресс — во вкладке **Actions**.
+
+### Событие и условия
+
+| Параметр | Значение |
+|---|---|
+| Событие | `issue_comment`, `pull_request_review_comment` |
+| Команды | `/claude`, `/cc` |
+| Доступ | Owner, Member, Collaborator |
+| Модель | `claude-sonnet-4-6` (Anthropic) |
+| Сессии | Не публикуются (`share: false`) |
+
+### Скиллы
+
+На раннере доступны те же скиллы, что и локально: `to-spec`, `to-tickets`,
+`implement-spec`, `code-review` и другие из `.agents/skills/`.
+
+### Настройка (один раз)
+
+1. Установите **Claude GitHub App** на репозиторий.
+2. Добавьте ключ модели: **Settings → Secrets and variables → Actions → New repository secret**
+   с именем `ANTHROPIC_API_KEY`.
+3. Убедитесь, что воркфлоу слит в `main`.
+
 ---
 
 <details>

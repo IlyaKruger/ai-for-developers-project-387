@@ -90,3 +90,10 @@ Default label vocabulary (`needs-triage`, `needs-info`, `ready-for-agent`, `read
 ### Domain docs
 
 Single-context layout (`GLOSSARY.md` + `docs/adr/` at repo root). See `docs/agents/domain.md`.
+
+### Агент в GitHub Actions
+
+Воркфлоу `.github/workflows/claude.yml`. Команды триггера: `/claude`, `/cc`.
+Доступен владельцам, участникам и коллабораторам репозитория.
+Скиллы устанавливаются из `.agents/skills/` при каждом прогоне.
+Требуется: Claude GitHub App + секрет `ANTHROPIC_API_KEY` в Settings → Secrets.
