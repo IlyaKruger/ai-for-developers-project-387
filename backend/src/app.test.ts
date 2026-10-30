@@ -276,6 +276,21 @@ describe('Booking topic', () => {
     expect(list[0]).not.toHaveProperty('topic')
   })
 
+  it('accepts a topic of exactly 280 characters and rejects 281', async () => {
+    expect((await book({ topic: 'a'.repeat(281) })).status).toBe(400)
+    expect((await book({ topic: 'a'.repeat(280) })).status).toBe(201)
+  })
+
+  it('trims the topic and treats whitespace-only as absent', async () => {
+    expect((await book({ topic: '   ' })).status).toBe(201)
+    let list: Array<{ id: string; topic?: string }> = await json(await app.request('/bookings'))
+    expect(list[0]).not.toHaveProperty('topic')
+    await app.request(`/bookings/${list[0].id}`, { method: 'DELETE' })
+    expect((await book({ topic: '  привет  ' })).status).toBe(201)
+    list = await json(await app.request('/bookings'))
+    expect(list[0].topic).toBe('привет')
+  })
+
   it('does not expose the topic in public slots', async () => {
     await book({ topic: 'секрет' })
     const et = db.eventTypes[0]

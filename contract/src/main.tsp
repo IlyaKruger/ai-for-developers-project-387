@@ -56,7 +56,7 @@ model CreateBookingRequest {
   slotId: string;
   bookerName: string;
   bookerEmail: string;
-  topic?: string;
+  @maxLength(280) topic?: string;
 }
 
 model ConflictError {

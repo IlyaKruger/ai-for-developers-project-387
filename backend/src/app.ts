@@ -84,7 +84,7 @@ export function createApp(db: Db, options: AppOptions = {}) {
         slotId: z.string(),
         bookerName: z.string().min(1),
         bookerEmail: z.email(),
-        topic: z.string().optional(),
+        topic: z.string().trim().max(280).optional(),
       }),
     ),
     (c) => {

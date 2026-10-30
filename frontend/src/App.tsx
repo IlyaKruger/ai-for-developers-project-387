@@ -15,8 +15,11 @@ type State =
   | { phase: 'success'; eventType: EventType; slot: Slot }
   | { phase: 'error'; message: string }
 
+const TOPIC_MAX_LENGTH = 280
+
 export default function App() {
   const [state, setState] = useState<State>({ phase: 'loading' })
+  const [topicText, setTopicText] = useState('')
 
   useEffect(() => {
     eventTypesList()
@@ -209,8 +212,14 @@ export default function App() {
             <textarea
               name="topic"
               rows={3}
+              maxLength={TOPIC_MAX_LENGTH}
+              value={topicText}
+              onChange={(e) => setTopicText(e.target.value)}
               className="rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
             />
+            <span className="text-xs font-normal text-muted-foreground">
+              {topicText.length} / {TOPIC_MAX_LENGTH}
+            </span>
           </label>
           <Button type="submit" disabled={submitting} className="mt-1">
             {submitting ? 'Отправка…' : 'Забронировать'}

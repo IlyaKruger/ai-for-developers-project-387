@@ -163,6 +163,7 @@ components:
           type: string
         topic:
           type: string
+          maxLength: 280
     CreateEventTypeRequest:
       type: object
       required:
