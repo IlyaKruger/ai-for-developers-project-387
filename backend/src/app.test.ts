@@ -291,6 +291,14 @@ describe('Booking topic', () => {
     expect(list[0].topic).toBe('привет')
   })
 
+  it('cancels a booking that has a topic', async () => {
+    await book({ topic: 'Обсудить цены' })
+    const list: Array<{ id: string }> = await json(await app.request('/bookings'))
+    const res = await app.request(`/bookings/${list[0].id}`, { method: 'DELETE' })
+    expect(res.status).toBe(204)
+    expect(await json(await app.request('/bookings'))).toEqual([])
+  })
+
   it('does not expose the topic in public slots', async () => {
     await book({ topic: 'секрет' })
     const et = db.eventTypes[0]
