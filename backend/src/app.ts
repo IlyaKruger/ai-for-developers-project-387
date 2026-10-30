@@ -84,7 +84,8 @@ export function createApp(db: Db, options: AppOptions = {}) {
         slotId: z.string(),
         bookerName: z.string().min(1),
         bookerEmail: z.email(),
-        topic: z.string().trim().max(280).optional(),
+        // String.length counts UTF-16 code units (zod max() counts code points), matching the form maxLength.
+        topic: z.string().trim().refine((v) => v.length <= 280).optional(),
       }),
     ),
     (c) => {

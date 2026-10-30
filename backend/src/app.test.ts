@@ -281,6 +281,11 @@ describe('Booking topic', () => {
     expect((await book({ topic: 'a'.repeat(280) })).status).toBe(201)
   })
 
+  it('counts the topic limit in UTF-16 code units (emoji take 2)', async () => {
+    expect((await book({ topic: '🎉'.repeat(141) })).status).toBe(400)
+    expect((await book({ topic: '🎉'.repeat(140) })).status).toBe(201)
+  })
+
   it('trims the topic and treats whitespace-only as absent', async () => {
     expect((await book({ topic: '   ' })).status).toBe(201)
     let list: Array<{ id: string; topic?: string }> = await json(await app.request('/bookings'))
