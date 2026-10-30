@@ -258,8 +258,9 @@ sticky-комментарием. Человек разбирает каждое 
 
 **Результаты запусков:**
 
-- [Прогон с учебным отчётом (demo_mode)](https://github.com/IlyaKruger/ai-for-developers-project-387/actions/workflows/lighthouse-audit.yml)
-- Issues с меткой [`lighthouse`](https://github.com/IlyaKruger/ai-for-developers-project-387/issues?q=label%3Alighthouse)
+- [Прогон с учебным отчётом (demo_mode)](https://github.com/IlyaKruger/ai-for-developers-project-387/actions/runs/41019239234) — артефакт `lh-summary.json` во вкладке Summary
+- [Issue #21 — учебная находка, созданная агентом](https://github.com/IlyaKruger/ai-for-developers-project-387/issues/21)
+- Все issues с меткой [`lighthouse`](https://github.com/IlyaKruger/ai-for-developers-project-387/issues?q=label%3Alighthouse)
 
 **Личные выводы о работе GitHub-агента:**
 
