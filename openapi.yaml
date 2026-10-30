@@ -26,7 +26,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Booking'
+                $ref: '#/components/schemas/BookingConfirmation'
         '409':
           description: The request conflicts with the current state of the server.
           content:
@@ -134,6 +134,36 @@ components:
           type: string
         bookerEmail:
           type: string
+        topic:
+          type: string
+    BookingConfirmation:
+      type: object
+      required:
+        - id
+        - slotId
+        - eventTypeId
+        - startTime
+        - durationMinutes
+        - bookerName
+        - bookerEmail
+      properties:
+        id:
+          type: string
+        slotId:
+          type: string
+        eventTypeId:
+          type: string
+        startTime:
+          type: string
+          format: date-time
+        durationMinutes:
+          type: integer
+          format: int32
+        bookerName:
+          type: string
+        bookerEmail:
+          type: string
+      description: 'Ответ на создание брони: гостю тема не возвращается.'
     ConflictError:
       type: object
       required:
@@ -159,6 +189,9 @@ components:
           type: string
         bookerEmail:
           type: string
+        topic:
+          type: string
+          maxLength: 280
     CreateEventTypeRequest:
       type: object
       required:

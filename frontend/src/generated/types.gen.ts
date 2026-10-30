@@ -12,6 +12,20 @@ export type Booking = {
     durationMinutes: number;
     bookerName: string;
     bookerEmail: string;
+    topic?: string;
+};
+
+/**
+ * Ответ на создание брони: гостю тема не возвращается.
+ */
+export type BookingConfirmation = {
+    id: string;
+    slotId: string;
+    eventTypeId: string;
+    startTime: string;
+    durationMinutes: number;
+    bookerName: string;
+    bookerEmail: string;
 };
 
 export type ConflictError = {
@@ -23,6 +37,7 @@ export type CreateBookingRequest = {
     slotId: string;
     bookerName: string;
     bookerEmail: string;
+    topic?: string;
 };
 
 export type CreateEventTypeRequest = {
@@ -97,7 +112,7 @@ export type BookingsCreateResponses = {
     /**
      * The request has succeeded and a new resource has been created as a result.
      */
-    201: Booking;
+    201: BookingConfirmation;
 };
 
 export type BookingsCreateResponse = BookingsCreateResponses[keyof BookingsCreateResponses];

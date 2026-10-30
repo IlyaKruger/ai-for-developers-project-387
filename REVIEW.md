@@ -33,6 +33,14 @@ Criteria for independent code review of the booking calendar. Each criterion sta
 - Over-limit: personal data stored without size bound; potential DoS or display breakage.
 - Whitespace: empty-looking topic stored; confusing Host view.
 
+## 3.1. Topic length limit is counted in UTF-16 code units
+
+**Expected:** The 280 limit (`@maxLength(280)` in the contract, a `.length <= 280` refine on the server (zod 4 `max()` would count code points), `maxLength` in the form) counts UTF-16 code units, not user-perceived characters (grapheme clusters). Characters outside the BMP, such as emoji, take 2 units: 140 × 🎉 (280 units) is accepted, 141 × 🎉 (282 units) is rejected with 400.
+
+**Seam:** `POST /bookings` in `backend/src/app.test.ts` (test "counts the topic limit in UTF-16 code units").
+
+**Consequence of failure:** The limit silently changes meaning (e.g. counting code points), diverging between contract, server and form.
+
 ## 4. Topic appears only in Host's booking list
 
 **Expected:** The `topic` field is present in `GET /bookings` (Host endpoint) when set, and absent from public slot/event-type responses. The booking confirmation response to the guest does not contain `topic`.

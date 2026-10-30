@@ -251,6 +251,67 @@ describe('GET /bookings', () => {
   })
 })
 
+describe('Booking topic', () => {
+  async function book(extra: Record<string, unknown>) {
+    const slots = await getSlots()
+    return app.request('/bookings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slotId: slots[0].id, bookerName: 'Alice', bookerEmail: 'alice@example.com', ...extra }),
+    })
+  }
+
+  it('shows the topic in the host list but not in the creation response', async () => {
+    const res = await book({ topic: 'Обсудить roadmap' })
+    expect(res.status).toBe(201)
+    expect(await json(res)).not.toHaveProperty('topic')
+    const list: Array<{ topic?: string }> = await json(await app.request('/bookings'))
+    expect(list[0].topic).toBe('Обсудить roadmap')
+  })
+
+  it('creates a booking without a topic as before', async () => {
+    const res = await book({})
+    expect(res.status).toBe(201)
+    const list: Array<{ topic?: string }> = await json(await app.request('/bookings'))
+    expect(list[0]).not.toHaveProperty('topic')
+  })
+
+  it('accepts a topic of exactly 280 characters and rejects 281', async () => {
+    expect((await book({ topic: 'a'.repeat(281) })).status).toBe(400)
+    expect((await book({ topic: 'a'.repeat(280) })).status).toBe(201)
+  })
+
+  it('counts the topic limit in UTF-16 code units (emoji take 2)', async () => {
+    expect((await book({ topic: '🎉'.repeat(141) })).status).toBe(400)
+    expect((await book({ topic: '🎉'.repeat(140) })).status).toBe(201)
+  })
+
+  it('trims the topic and treats whitespace-only as absent', async () => {
+    expect((await book({ topic: '   ' })).status).toBe(201)
+    let list: Array<{ id: string; topic?: string }> = await json(await app.request('/bookings'))
+    expect(list[0]).not.toHaveProperty('topic')
+    await app.request(`/bookings/${list[0].id}`, { method: 'DELETE' })
+    expect((await book({ topic: '  привет  ' })).status).toBe(201)
+    list = await json(await app.request('/bookings'))
+    expect(list[0].topic).toBe('привет')
+  })
+
+  it('cancels a booking that has a topic', async () => {
+    await book({ topic: 'Обсудить цены' })
+    const list: Array<{ id: string }> = await json(await app.request('/bookings'))
+    const res = await app.request(`/bookings/${list[0].id}`, { method: 'DELETE' })
+    expect(res.status).toBe(204)
+    expect(await json(await app.request('/bookings'))).toEqual([])
+  })
+
+  it('does not expose the topic in public slots', async () => {
+    await book({ topic: 'секрет' })
+    const et = db.eventTypes[0]
+    const res = await app.request(`/slots?eventTypeId=${et.id}`)
+    expect(JSON.stringify(await json(res))).not.toContain('секрет')
+  })
+})
+
 describe('DELETE /bookings/:id', () => {
   it('cancels a booking and returns 204', async () => {
     const slots = await getSlots()

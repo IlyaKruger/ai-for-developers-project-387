@@ -49,12 +49,25 @@ model Booking {
   durationMinutes: int32;
   bookerName: string;
   bookerEmail: string;
+  topic?: string;
+}
+
+/** Ответ на создание брони: гостю тема не возвращается. */
+model BookingConfirmation {
+  id: string;
+  slotId: string;
+  eventTypeId: string;
+  startTime: utcDateTime;
+  durationMinutes: int32;
+  bookerName: string;
+  bookerEmail: string;
 }
 
 model CreateBookingRequest {
   slotId: string;
   bookerName: string;
   bookerEmail: string;
+  @maxLength(280) topic?: string;
 }
 
 model ConflictError {
@@ -98,7 +111,7 @@ interface Bookings {
   create(@body body: CreateBookingRequest):
     | {
         @statusCode statusCode: 201;
-        @body body: Booking;
+        @body body: BookingConfirmation;
       }
     | {
         @statusCode statusCode: 409;

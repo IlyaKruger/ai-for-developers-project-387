@@ -15,8 +15,11 @@ type State =
   | { phase: 'success'; eventType: EventType; slot: Slot }
   | { phase: 'error'; message: string }
 
+const TOPIC_MAX_LENGTH = 280
+
 export default function App() {
   const [state, setState] = useState<State>({ phase: 'loading' })
+  const [topicText, setTopicText] = useState('')
 
   useEffect(() => {
     eventTypesList()
@@ -48,12 +51,14 @@ export default function App() {
     if (state.phase !== 'booking') return
     const { eventType, slot, slots, eventTypes } = state
     const fd = new FormData(e.currentTarget)
+    const topic = (fd.get('topic') as string).trim()
     setState({ phase: 'submitting', eventType, slot, slots, eventTypes })
     const r = await bookingsCreate({
       body: {
         slotId: slot.id,
         bookerName: fd.get('name') as string,
         bookerEmail: fd.get('email') as string,
+        ...(topic ? { topic } : {}),
       },
     })
     if (r.error) {
@@ -201,6 +206,20 @@ export default function App() {
               required
               className="rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
             />
+          </label>
+          <label className="flex flex-col gap-1 text-sm font-medium">
+            Тема разговора (необязательно)
+            <textarea
+              name="topic"
+              rows={3}
+              maxLength={TOPIC_MAX_LENGTH}
+              value={topicText}
+              onChange={(e) => setTopicText(e.target.value)}
+              className="rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
+            />
+            <span className="text-xs font-normal text-muted-foreground">
+              {topicText.length} / {TOPIC_MAX_LENGTH}
+            </span>
           </label>
           <Button type="submit" disabled={submitting} className="mt-1">
             {submitting ? 'Отправка…' : 'Забронировать'}
