@@ -39,7 +39,23 @@ jobs:
         run: npm run test:unit
 
       - name: E2e tests (browser)
+        # PLAYWRIGHT_TRACE=on records a trace for every test so the artifact
+        # can be used as an independent browser-check before merge.
+        env:
+          PLAYWRIGHT_TRACE: "on"
         run: npm run test:e2e
+
+      - name: Record head SHA for artifact traceability
+        if: always()
+        run: echo "${{ github.sha }}" > frontend/test-results/.sha
+
+      - name: Upload Playwright trace
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-trace-${{ github.sha }}
+          path: frontend/test-results/
+          retention-days: 7
 
   # ── Contract freshness: regenerate and assert no diff ─────────────────────
   # Catches contract/SDK drift before it reaches main.

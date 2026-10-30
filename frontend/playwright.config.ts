@@ -7,6 +7,8 @@ export default defineConfig({
   use: {
     baseURL: 'http://localhost:5173',
     headless: true,
+    // Record trace when PLAYWRIGHT_TRACE=on (set in CI for the artifact upload).
+    trace: process.env.PLAYWRIGHT_TRACE === 'on' ? 'on' : 'off',
   },
   projects: [
     {
