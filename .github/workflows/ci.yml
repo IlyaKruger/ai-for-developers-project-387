@@ -47,13 +47,19 @@ jobs:
 
       - name: Record head SHA for artifact traceability
         if: always()
-        run: echo "${{ github.sha }}" > frontend/test-results/.sha
+        # For pull_request events use the PR head SHA (not the merge commit).
+        # For push events github.sha is the actual commit.
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: echo "$HEAD_SHA" > frontend/test-results/.sha
 
       - name: Upload Playwright trace
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-trace-${{ github.sha }}
+          # Name includes the PR head SHA so the reviewer can verify it
+          # matches the PR at the time of the merge decision.
+          name: playwright-trace-${{ github.event.pull_request.head.sha || github.sha }}
           path: frontend/test-results/
           retention-days: 7
 
