@@ -9,8 +9,12 @@ A specific, one-time date-and-time window on the host's calendar that can be boo
 _Avoid_: time slot, appointment, event, opening
 
 **Booking**:
-A reservation of one slot made by a booker. Holds the booker's name and email alongside a reference to the slot. One booking per slot maximum.
+A reservation of one slot made by a booker. Holds the booker's name and email alongside a reference to the slot, and optionally a Topic. One booking per slot maximum.
 _Avoid_: reservation, appointment, registration
+
+**Topic**:
+An optional short text (up to 280 characters; русский термин «тема разговора») the booker leaves when making a booking, describing what they want to discuss. Fixed at creation and visible only to the host in the bookings list; not shown publicly or back to the booker.
+_Avoid_: comment, note, message
 
 **Booker**:
 A person who books a slot on the public page. Identified only by name and email; no account required.

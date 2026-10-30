@@ -49,12 +49,14 @@ model Booking {
   durationMinutes: int32;
   bookerName: string;
   bookerEmail: string;
+  topic?: string;
 }
 
 model CreateBookingRequest {
   slotId: string;
   bookerName: string;
   bookerEmail: string;
+  topic?: string;
 }
 
 model ConflictError {

@@ -251,6 +251,39 @@ describe('GET /bookings', () => {
   })
 })
 
+describe('Booking topic', () => {
+  async function book(extra: Record<string, unknown>) {
+    const slots = await getSlots()
+    return app.request('/bookings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slotId: slots[0].id, bookerName: 'Alice', bookerEmail: 'alice@example.com', ...extra }),
+    })
+  }
+
+  it('shows the topic in the host list but not in the creation response', async () => {
+    const res = await book({ topic: 'Обсудить roadmap' })
+    expect(res.status).toBe(201)
+    expect(await json(res)).not.toHaveProperty('topic')
+    const list: Array<{ topic?: string }> = await json(await app.request('/bookings'))
+    expect(list[0].topic).toBe('Обсудить roadmap')
+  })
+
+  it('creates a booking without a topic as before', async () => {
+    const res = await book({})
+    expect(res.status).toBe(201)
+    const list: Array<{ topic?: string }> = await json(await app.request('/bookings'))
+    expect(list[0]).not.toHaveProperty('topic')
+  })
+
+  it('does not expose the topic in public slots', async () => {
+    await book({ topic: 'секрет' })
+    const et = db.eventTypes[0]
+    const res = await app.request(`/slots?eventTypeId=${et.id}`)
+    expect(JSON.stringify(await json(res))).not.toContain('секрет')
+  })
+})
+
 describe('DELETE /bookings/:id', () => {
   it('cancels a booking and returns 204', async () => {
     const slots = await getSlots()

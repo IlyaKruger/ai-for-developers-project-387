@@ -48,12 +48,14 @@ export default function App() {
     if (state.phase !== 'booking') return
     const { eventType, slot, slots, eventTypes } = state
     const fd = new FormData(e.currentTarget)
+    const topic = (fd.get('topic') as string).trim()
     setState({ phase: 'submitting', eventType, slot, slots, eventTypes })
     const r = await bookingsCreate({
       body: {
         slotId: slot.id,
         bookerName: fd.get('name') as string,
         bookerEmail: fd.get('email') as string,
+        ...(topic ? { topic } : {}),
       },
     })
     if (r.error) {
@@ -199,6 +201,14 @@ export default function App() {
               name="email"
               type="email"
               required
+              className="rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm font-medium">
+            Тема разговора (необязательно)
+            <textarea
+              name="topic"
+              rows={3}
               className="rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
             />
           </label>

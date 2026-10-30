@@ -26,6 +26,7 @@ export type Booking = {
   durationMinutes: number;
   bookerName: string;
   bookerEmail: string;
+  topic?: string;
 };
 
 export type Db = {

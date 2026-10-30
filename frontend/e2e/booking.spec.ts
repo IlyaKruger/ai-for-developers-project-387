@@ -35,6 +35,23 @@ test.describe('Guest booking flow', () => {
   })
 })
 
+test.describe('Booking topic', () => {
+  test('guest enters a topic and the host sees it', async ({ page }) => {
+    await page.goto('/')
+    await page.locator('ul li button').first().click()
+    await page.locator('ul li button').nth(3).click()
+    await page.getByLabel('Имя').fill('Тема Тестов')
+    await page.getByLabel('Email').fill('topic@example.com')
+    await page.getByLabel(/Тема разговора/).fill('Обсудить архитектуру')
+    await page.getByRole('button', { name: 'Забронировать' }).click()
+    await expect(page.getByText('Запись подтверждена!')).toBeVisible({ timeout: 5_000 })
+    await expect(page.getByText('Обсудить архитектуру')).toHaveCount(0)
+
+    await page.goto('/host')
+    await expect(page.getByText('Обсудить архитектуру')).toBeVisible({ timeout: 5_000 })
+  })
+})
+
 const API = 'http://localhost:3001'
 
 test.describe('Booking conflict', () => {

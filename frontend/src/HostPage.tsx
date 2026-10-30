@@ -71,6 +71,12 @@ function BookingsTab() {
                 {b.bookerEmail}
               </a>
             </p>
+            {b.topic && (
+              <p className="mt-1 whitespace-pre-wrap break-words text-sm">
+                <span className="text-muted-foreground">Тема: </span>
+                {b.topic}
+              </p>
+            )}
           </div>
           <button
             type="button"

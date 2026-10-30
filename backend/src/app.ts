@@ -84,10 +84,11 @@ export function createApp(db: Db, options: AppOptions = {}) {
         slotId: z.string(),
         bookerName: z.string().min(1),
         bookerEmail: z.email(),
+        topic: z.string().optional(),
       }),
     ),
     (c) => {
-      const { slotId, bookerName, bookerEmail } = c.req.valid("json");
+      const { slotId, bookerName, bookerEmail, topic } = c.req.valid("json");
       const now = getNow();
 
       // Verify the slot exists in the rolling window (ignoring current bookings).
@@ -118,9 +119,12 @@ export function createApp(db: Db, options: AppOptions = {}) {
         durationMinutes: et.durationMinutes,
         bookerName,
         bookerEmail,
+        ...(topic ? { topic } : {}),
       };
       db.bookings.push(booking);
-      return c.json(booking, 201);
+      // The Topic is for the Host only: never echo it back to the Booker.
+      const { topic: _topic, ...publicBooking } = booking;
+      return c.json(publicBooking, 201);
     },
   );
 

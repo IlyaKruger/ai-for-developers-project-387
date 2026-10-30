@@ -12,6 +12,7 @@ export type Booking = {
     durationMinutes: number;
     bookerName: string;
     bookerEmail: string;
+    topic?: string;
 };
 
 export type ConflictError = {
@@ -23,6 +24,7 @@ export type CreateBookingRequest = {
     slotId: string;
     bookerName: string;
     bookerEmail: string;
+    topic?: string;
 };
 
 export type CreateEventTypeRequest = {

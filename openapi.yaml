@@ -134,6 +134,8 @@ components:
           type: string
         bookerEmail:
           type: string
+        topic:
+          type: string
     ConflictError:
       type: object
       required:
@@ -158,6 +160,8 @@ components:
         bookerName:
           type: string
         bookerEmail:
+          type: string
+        topic:
           type: string
     CreateEventTypeRequest:
       type: object
