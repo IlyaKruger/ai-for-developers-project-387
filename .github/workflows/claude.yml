@@ -38,6 +38,7 @@ jobs:
         run: mkdir -p ~/.claude && cp -r .agents/skills ~/.claude/skills
 
       - name: Check PR run budget
+        id: budget
         if: github.event.issue.pull_request != null || github.event_name == 'pull_request_review_comment'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -69,11 +70,11 @@ jobs:
           > SHA: \`${HEAD_SHA}\`
           > Logs: ${RUN_URL}
           > Status: needs human — no further automated runs will start."
-            echo "Budget exhausted. Exiting without calling model."
-            exit 0
+            echo "exhausted=true" >> "$GITHUB_OUTPUT"
           fi
 
       - uses: anthropics/claude-code-action@v1
+        if: steps.budget.outputs.exhausted != 'true'
         with:
           trigger_phrase: /claude
           allowed_bots: github-actions
