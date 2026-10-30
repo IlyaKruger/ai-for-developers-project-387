@@ -50,6 +50,9 @@ jobs:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           use_sticky_comment: true
+          # Allow bots (github-actions, claude) to trigger auto-review.
+          # Without this, PRs pushed/updated by bots are silently rejected.
+          allowed_bots: "*"
           # Allow read operations and PR comment posting; deny code changes.
           settings: |
             {
