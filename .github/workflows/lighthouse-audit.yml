@@ -1,0 +1,244 @@
+name: Lighthouse Audit
+
+on:
+  schedule:
+    # 06:17 Moscow time (UTC+3) — daily
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+    inputs:
+      demo_mode:
+        description: 'Использовать учебный отчёт с подготовленной находкой (не реальный аудит)'
+        type: boolean
+        default: false
+
+# Only one audit at a time — new run waits for the previous to finish
+concurrency:
+  group: lighthouse-audit
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      issues: write
+      id-token: write
+      actions: read
+
+    env:
+      APP_URL: ${{ vars.APP_URL || 'https://ai-for-developers-project-386-6d42.onrender.com' }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run Lighthouse audit
+        if: ${{ !inputs.demo_mode }}
+        run: |
+          npx lighthouse@12 "$APP_URL" \
+            --output=json \
+            --output-path=lh-report.json \
+            --chrome-flags="--headless --no-sandbox --disable-dev-shm-usage" \
+            --only-categories=performance,accessibility,best-practices,seo \
+            --quiet
+
+          # Extract a compact summary Claude can read without loading the full 3 MB JSON
+          node -e "
+            const fs = require('fs');
+            const r = JSON.parse(fs.readFileSync('lh-report.json'));
+            const cats = r.categories;
+            const audits = r.audits;
+
+            const summary = {
+              url: r.finalUrl,
+              fetchTime: r.fetchTime,
+              scores: Object.fromEntries(
+                Object.entries(cats).map(([k, v]) => [k, Math.round(v.score * 100)])
+              ),
+              findings: []
+            };
+
+            // Category-level findings (score < 90)
+            Object.entries(cats).forEach(([key, cat]) => {
+              const score = Math.round(cat.score * 100);
+              if (score < 90) {
+                summary.findings.push({
+                  type: 'category',
+                  category: key,
+                  title: cat.title,
+                  score
+                });
+              }
+            });
+
+            // Key audit-level findings (score < 0.9)
+            const watchedAudits = [
+              'largest-contentful-paint',
+              'first-contentful-paint',
+              'total-blocking-time',
+              'cumulative-layout-shift',
+              'speed-index',
+              'interactive',
+              'server-response-time'
+            ];
+            watchedAudits.forEach(id => {
+              const a = audits[id];
+              if (a && a.score !== null && a.score < 0.9) {
+                summary.findings.push({
+                  type: 'audit',
+                  auditId: id,
+                  title: a.title,
+                  displayValue: a.displayValue,
+                  score: Math.round((a.score || 0) * 100)
+                });
+              }
+            });
+
+            fs.writeFileSync('lh-summary.json', JSON.stringify(summary, null, 2));
+            console.log('Summary:', JSON.stringify(summary.scores));
+          "
+
+      - name: Create demo report (training mode)
+        if: ${{ inputs.demo_mode }}
+        run: |
+          cat > lh-summary.json << 'DEMO_EOF'
+          {
+            "url": "https://ai-for-developers-project-386-6d42.onrender.com",
+            "fetchTime": "2026-10-30T03:17:00.000Z",
+            "demo": true,
+            "demoNote": "УЧЕБНЫЙ ОТЧЁТ — подготовленная находка для демонстрации. Не является подтверждённым дефектом приложения.",
+            "scores": {
+              "performance": 42,
+              "accessibility": 95,
+              "best-practices": 100,
+              "seo": 92
+            },
+            "findings": [
+              {
+                "type": "category",
+                "category": "performance",
+                "title": "Performance",
+                "score": 42
+              },
+              {
+                "type": "audit",
+                "auditId": "largest-contentful-paint",
+                "title": "Largest Contentful Paint",
+                "displayValue": "5.8 s",
+                "score": 15,
+                "note": "УЧЕБНАЯ НАХОДКА: вероятная причина — cold start Render Free Tier"
+              },
+              {
+                "type": "audit",
+                "auditId": "server-response-time",
+                "title": "Initial server response time was short",
+                "displayValue": "4,200 ms",
+                "score": 0,
+                "note": "УЧЕБНАЯ НАХОДКА: TTFB 4.2 с — сервер не ответил за 600 мс"
+              }
+            ]
+          }
+          DEMO_EOF
+          echo "Demo report created (training mode)"
+
+      - name: Upload Lighthouse report as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-report-${{ github.run_id }}
+          path: |
+            lh-summary.json
+            lh-report.json
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Install agent skills
+        run: mkdir -p ~/.claude && cp -r .agents/skills ~/.claude/skills
+
+      - name: Analyze report and manage issues
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          settings: |
+            {
+              "permissions": {
+                "allow": [
+                  "Bash(cat:*)",
+                  "Bash(ls:*)",
+                  "Bash(echo:*)",
+                  "Bash(gh issue list:*)",
+                  "Bash(gh issue create:*)",
+                  "Bash(gh issue comment:*)",
+                  "Bash(gh label create:*)",
+                  "Bash(gh label list:*)",
+                  "Bash(jq:*)"
+                ]
+              }
+            }
+          prompt: |
+            You are a Lighthouse performance audit agent running in GitHub Actions.
+
+            Context:
+            - App URL: ${{ env.APP_URL }}
+            - Run URL: ${{ env.RUN_URL }}
+            - Demo mode: ${{ inputs.demo_mode || 'false' }}
+            - Repository: ${{ github.repository }}
+
+            Execute the following steps in order without asking for confirmation:
+
+            ## Step 1 — Read the report
+            Read lh-summary.json and parse all findings.
+            If the file does not exist, output "Report file not found" and stop.
+
+            ## Step 2 — If no findings
+            If the findings array is empty or all category scores are >= 90:
+            - Output: "Lighthouse audit complete. No findings (all scores ≥ 90). Run: ${{ env.RUN_URL }}"
+            - Stop here. Do NOT create any issue.
+
+            ## Step 3 — Ensure labels exist
+            Run: gh label list --json name --jq '.[].name'
+            If "lighthouse" label is missing: gh label create lighthouse --color "FFD700" --description "Lighthouse audit finding"
+            If demo mode is true and "training" label missing: gh label create training --color "0075ca" --description "Training/demo issue, not a real defect"
+
+            ## Step 4 — For each significant finding (score < 90)
+            Process only category-level findings (type == "category") to avoid duplicate issues per metric.
+            For each such finding:
+
+            a) Determine issue title:
+               "[Lighthouse] ${{ inputs.demo_mode && 'УЧЕБНАЯ ЗАДАЧА: ' || '' }}<category> score: <score>/100 (<app short name>)"
+               Example: "[Lighthouse] performance score: 42/100 (booking-app)"
+
+            b) Search for existing open issues with the same label and similar title:
+               gh issue list --label lighthouse --state open --json number,title --limit 100
+
+            c) Compare: if an open issue already exists with the same category keyword in the title — skip, output "Duplicate found: #<N>, skipping".
+
+            d) If no duplicate — create the issue:
+               gh issue create \
+                 --title "<title>" \
+                 --label "lighthouse" \
+                 [--label "training" if demo mode] \
+                 --body "<body>"
+
+               Issue body must include:
+               - One-sentence problem description
+               - Score and threshold (target ≥ 90)
+               - Key metric values from the findings (displayValue, auditId)
+               - Suggested action (investigate cold start / optimize assets / etc.)
+               - Link to this run: ${{ env.RUN_URL }}
+               - App URL: ${{ env.APP_URL }}
+               - If demo mode: prominent note "⚠️ УЧЕБНАЯ ЗАДАЧА — создана на основе учебного отчёта. Не является подтверждённым дефектом приложения."
+
+            ## Step 5 — Output summary
+            Print a summary of actions taken:
+            - Issues created: list with numbers and titles
+            - Issues skipped (duplicates): list with existing issue numbers
+            - Run URL: ${{ env.RUN_URL }}
