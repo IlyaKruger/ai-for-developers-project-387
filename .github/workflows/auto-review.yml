@@ -50,7 +50,7 @@ jobs:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           use_sticky_comment: true
-          # Restrict to read-only operations: reviewer must not change code or PR state.
+          # Allow read operations and PR comment posting; deny code changes.
           settings: |
             {
               "permissions": {
@@ -59,11 +59,15 @@ jobs:
                   "Bash(gh pr view:*)",
                   "Bash(gh pr diff:*)",
                   "Bash(gh pr checks:*)",
+                  "Bash(gh pr comment:*)",
                   "Bash(gh issue view:*)",
-                  "Bash(gh api repos/*/actions/runs*:*)",
+                  "Bash(gh api:*)",
                   "Bash(git log:*)",
                   "Bash(git diff:*)",
-                  "Bash(git show:*)"
+                  "Bash(git show:*)",
+                  "Bash(cat:*)",
+                  "Bash(ls:*)",
+                  "Bash(grep:*)"
                 ],
                 "deny": [
                   "Write(**)",
@@ -71,43 +75,49 @@ jobs:
                   "Bash(gh pr edit:*)",
                   "Bash(gh pr merge:*)",
                   "Bash(gh pr review:*)",
+                  "Bash(gh pr close:*)",
                   "Bash(git push:*)",
                   "Bash(git commit:*)"
                 ]
               }
             }
           prompt: |
-            You are an independent code reviewer. Do NOT change any code.
+            You are an independent code reviewer. Do NOT change any code or files.
 
             ## Context
             PR: #${{ github.event.pull_request.number }} — "${{ github.event.pull_request.title }}"
             Head SHA: `${{ github.event.pull_request.head.sha }}`
+            Repository: ${{ github.repository }}
 
-            ## Your review criteria (from REVIEW.md)
+            ## Your review criteria (from REVIEW.md — passed explicitly by this workflow)
             ${{ steps.review_criteria.outputs.content }}
 
             ## Steps (execute in order, no confirmation needed)
 
-            1. Read the PR description: `gh pr view ${{ github.event.pull_request.number }}`.
-               Find the links to the spec issue and the human approval comment. Read them with `gh issue view <N>`.
+            1. Read the PR description: `gh pr view ${{ github.event.pull_request.number }} --repo ${{ github.repository }}`.
+               Find the links to the spec issue and the human approval comment. Read them with `gh issue view <N> --repo ${{ github.repository }}`.
 
-            2. Read the PR diff: `gh pr diff ${{ github.event.pull_request.number }}`.
+            2. Read the PR diff: `gh pr diff ${{ github.event.pull_request.number }} --repo ${{ github.repository }}`.
 
-            3. Check CI status: `gh pr checks ${{ github.event.pull_request.number }}`.
+            3. Check CI status: `gh pr checks ${{ github.event.pull_request.number }} --repo ${{ github.repository }}`.
 
-            4. Read the changed source files for context (use `Read` tool).
+            4. Read the changed source files for deeper context (use the `Read` tool on relevant files).
 
             5. Evaluate the PR against EVERY criterion in REVIEW.md above.
                Also check:
-               - Does the implementation match the agreed spec (found in step 1)?
+               - Does the implementation match the agreed spec (from step 1)?
                - Are the main scenario, negative scenario, and adjacent scenario covered by tests?
                - Does the change stay within the agreed scope?
 
-            6. Write your review. Format:
-               - Start with: `> *This review was generated automatically at SHA ${{ github.event.pull_request.head.sha }}.*`
-               - For each finding: **file path** (if applicable), condition that triggers the issue, consequence.
-               - If no confirmed defects: say so explicitly.
-               - Do NOT repeat linter output — just note pass/fail.
-               - End with a one-line summary: ✅ No issues found / ⚠️ N issues found.
+            6. Post your review as a comment on the PR using:
+               `gh pr comment ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --body "..."`
 
-            The review is posted as a sticky comment on the PR. Do not approve or request changes via `gh pr review` — comment only.
+               Format the review body as:
+               - First line: `> *This review was generated automatically at SHA ${{ github.event.pull_request.head.sha }}.*`
+               - For each finding: file path, condition that triggers the issue, consequence.
+               - If no confirmed defects: say so explicitly.
+               - Do NOT repeat linter output — just note pass/fail for lint check.
+               - Last line: ✅ No issues found / ⚠️ N issues found.
+
+            Do not approve or request changes via `gh pr review` — use `gh pr comment` only.
+            Do not modify any source files, tests, or workflow files.
