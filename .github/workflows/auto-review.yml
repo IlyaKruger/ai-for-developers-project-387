@@ -1,0 +1,114 @@
+name: Auto Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  auto-review:
+    # Only review PRs from this repo (never from forks — they would expose secrets).
+    # Bot-authored PRs (e.g. from implement-spec) are intentionally included so that
+    # agent-generated PRs also receive an independent review.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Cancel the in-progress review for the same PR when a new push arrives.
+    concurrency:
+      group: auto-review-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    permissions:
+      contents: read
+      issues: read
+      actions: read
+      checks: read
+      statuses: read
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Check out the exact PR head commit (not the merge commit) so the
+          # reviewer sees what the author actually wrote. Record the SHA so it
+          # appears in the review comment.
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+
+      - name: Read REVIEW.md
+        id: review_criteria
+        run: |
+          {
+            echo 'content<<REVIEW_EOF'
+            cat REVIEW.md
+            echo 'REVIEW_EOF'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Install agent skills
+        run: mkdir -p ~/.claude && cp -r .agents/skills ~/.claude/skills
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          use_sticky_comment: true
+          timeout_minutes: 14
+          # Restrict to read-only operations: reviewer must not change code or PR state.
+          settings: |
+            {
+              "permissions": {
+                "allow": [
+                  "Read(**)",
+                  "Bash(gh pr view:*)",
+                  "Bash(gh pr diff:*)",
+                  "Bash(gh pr checks:*)",
+                  "Bash(gh issue view:*)",
+                  "Bash(gh api repos/*/actions/runs*:*)",
+                  "Bash(git log:*)",
+                  "Bash(git diff:*)",
+                  "Bash(git show:*)"
+                ],
+                "deny": [
+                  "Write(**)",
+                  "Edit(**)",
+                  "Bash(gh pr edit:*)",
+                  "Bash(gh pr merge:*)",
+                  "Bash(gh pr review:*)",
+                  "Bash(git push:*)",
+                  "Bash(git commit:*)"
+                ]
+              }
+            }
+          prompt: |
+            You are an independent code reviewer. Do NOT change any code.
+
+            ## Context
+            PR: #${{ github.event.pull_request.number }} — "${{ github.event.pull_request.title }}"
+            Head SHA: `${{ github.event.pull_request.head.sha }}`
+
+            ## Your review criteria (from REVIEW.md)
+            ${{ steps.review_criteria.outputs.content }}
+
+            ## Steps (execute in order, no confirmation needed)
+
+            1. Read the PR description: `gh pr view ${{ github.event.pull_request.number }}`.
+               Find the links to the spec issue and the human approval comment. Read them with `gh issue view <N>`.
+
+            2. Read the PR diff: `gh pr diff ${{ github.event.pull_request.number }}`.
+
+            3. Check CI status: `gh pr checks ${{ github.event.pull_request.number }}`.
+
+            4. Read the changed source files for context (use `Read` tool).
+
+            5. Evaluate the PR against EVERY criterion in REVIEW.md above.
+               Also check:
+               - Does the implementation match the agreed spec (found in step 1)?
+               - Are the main scenario, negative scenario, and adjacent scenario covered by tests?
+               - Does the change stay within the agreed scope?
+
+            6. Write your review. Format:
+               - Start with: `> *This review was generated automatically at SHA ${{ github.event.pull_request.head.sha }}.*`
+               - For each finding: **file path** (if applicable), condition that triggers the issue, consequence.
+               - If no confirmed defects: say so explicitly.
+               - Do NOT repeat linter output — just note pass/fail.
+               - End with a one-line summary: ✅ No issues found / ⚠️ N issues found.
+
+            The review is posted as a sticky comment on the PR. Do not approve or request changes via `gh pr review` — comment only.
