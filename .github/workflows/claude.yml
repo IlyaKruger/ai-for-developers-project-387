@@ -79,6 +79,29 @@ jobs:
           allowed_bots: github-actions
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          settings: |
+            {
+              "permissions": {
+                "allow": [
+                  "Bash(npm:*)",
+                  "Bash(npx:*)",
+                  "Bash(node:*)",
+                  "Bash(git:*)",
+                  "Bash(gh:*)",
+                  "Bash(cat:*)",
+                  "Bash(ls:*)",
+                  "Bash(find:*)",
+                  "Bash(grep:*)",
+                  "Bash(mkdir:*)",
+                  "Bash(cp:*)",
+                  "Bash(mv:*)",
+                  "Bash(echo:*)",
+                  "Read(**)",
+                  "Write(**)",
+                  "Edit(**)"
+                ]
+              }
+            }
 
   auto-triage:
     if: |
